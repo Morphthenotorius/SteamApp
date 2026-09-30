@@ -8,5 +8,7 @@ namespace DataAccess.Abstract
 {
     public interface ILibraryDAL : IRepositoryBase<Library>
     {
+        Task RemoveGameFromLibrary(LibraryGames game);
+        Task<Library> GetLibraryWithGames(Guid id);
     }
 }

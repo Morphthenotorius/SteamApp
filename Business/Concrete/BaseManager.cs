@@ -69,7 +69,7 @@ namespace Business.Concrete
             }
         }
 
-        public async Task<IDataResult<List<TGetDTO>>> GetAllAsync()
+        public virtual async Task<IDataResult<List<TGetDTO>>> GetAllAsync()
         {
             try
             {

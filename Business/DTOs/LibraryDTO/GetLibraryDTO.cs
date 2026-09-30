@@ -8,8 +8,9 @@ namespace Business.DTOs.LibraryDTO
 {
     public sealed record GetLibraryDTO
     {
+        public Guid Id { get; set; }
         public Guid GameId { get; set; }
         public Guid UserId { get; set; }
-        public List<LibraryGames> Games { get; set; } = new();
+        public List<GetLibraryGamesDTO> Games { get; set; } = new();
     }
 }
