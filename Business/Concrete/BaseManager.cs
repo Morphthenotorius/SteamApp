@@ -143,7 +143,7 @@ namespace Business.Concrete
                     return new ErrorDataResult<TGetDTO>("Upcoming data cannot be null");
                 }
                 var dto = _mapToGetDTO(entity);
-                return new SuccessDataResult<TGetDTO>("Data has been provided successfully");
+                return new SuccessDataResult<TGetDTO>(dto,"Data has been provided successfully");
             }
 
             catch (Exception ex) 

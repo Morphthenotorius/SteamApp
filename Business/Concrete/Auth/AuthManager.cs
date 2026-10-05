@@ -6,6 +6,7 @@ using Core.Entities.User;
 using Core.Utilites.Results;
 using Core.Utilites.Security.Abstract;
 using DataAccess.Abstract;
+using DataAccess.Context;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -80,8 +81,12 @@ namespace Business.Concrete.Auth
             var result = await _userManager.CreateAsync(appUser, model.Password);
             if (!result.Succeeded)
             {
-                return new ErrorResult("Oops something went wrong"); 
+                var errorMessage = string.Join(" | ", result.Errors.Select(e => e.Description));
+                return new ErrorResult(errorMessage);
             }
+
+            using AppDbContext context = new AppDbContext();
+            context.SaveChangesAsync();
 
             var UserLibrary = new Library
             {

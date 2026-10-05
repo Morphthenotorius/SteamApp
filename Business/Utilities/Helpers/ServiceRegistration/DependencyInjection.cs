@@ -1,7 +1,9 @@
 ﻿using Business.Abstract;
 using Business.Abstract.Auth;
+using Business.Abstract.Payment;
 using Business.Concrete;
 using Business.Concrete.Auth;
+using Business.Concrete.Payment;
 using Core.Entities.User;
 using Core.Utilites.Security.Abstract;
 using Core.Utilites.Security.Concrete;
@@ -32,6 +34,7 @@ namespace Business.Utilities.Helpers.ServiceRegistration
             services.AddScoped<ICompanyService, CompanyManager>();
             services.AddScoped<IAuthService, AuthManager>();
             services.AddScoped<ITokenHelper, JwtHelper>();
+            services.AddScoped<IStripeService, StripeManager>();
             services.AddDataProtection();
             services.AddIdentityCore<AppUser>(options =>
             {

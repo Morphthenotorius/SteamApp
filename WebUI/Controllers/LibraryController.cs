@@ -1,10 +1,12 @@
 ﻿using Business.Abstract;
 using Business.DTOs.LibraryDTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebUI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class LibraryController : ControllerBase
@@ -14,6 +16,18 @@ namespace WebUI.Controllers
         public LibraryController(ILibraryService libraryService)
         {
             _libraryService = libraryService;
+        }
+
+        [HttpPost("BuyGame")]
+        public async Task<IActionResult> BuyGame([FromBody] AddGameToLibraryDTO model)
+        {
+            var result = await _libraryService.BuyGameAsync(model);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
 
         [HttpGet("GetAll")]
@@ -47,19 +61,44 @@ namespace WebUI.Controllers
 
         }
 
-        [HttpPost("CreateLibrary")]
-        public async Task<IActionResult> Create(CreateLibraryDTO dto)
+        [HttpPost("RefundGame")]
+        public async Task<IActionResult> RefundGame(Guid userId,Guid gameId)
         {
-            var result = await _libraryService.AddAsync(dto);
+            var result = await _libraryService.RefundGame(userId, gameId);
             if (result.IsSuccess)
             {
-                return Created();
+                return Ok(result);
+            }
+
+            return BadRequest(result.Message);
+        }
+
+        [HttpGet ("GetUserLibraryWGames")]
+        public async Task<IActionResult> GetUserLibraryWithGames(Guid userId)
+        {
+            var result = await _libraryService.GetUserLibraryWithGamesAsync(userId);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
             }
 
             else
             {
-                return BadRequest(result.Message);
+                return NotFound(result.Message);
             }
+
+        }
+
+        [HttpPost("ToggleFavourite")]
+        public async Task<IActionResult> ToggleFavourite(Guid userId,Guid gameId)
+        {
+            var result = await _libraryService.ToggleFavouriteGameAsync(userId, gameId);
+            if(result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
 
         [HttpPut("UpdateLibrary")]

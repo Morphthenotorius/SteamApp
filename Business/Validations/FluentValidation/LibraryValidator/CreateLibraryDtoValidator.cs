@@ -12,9 +12,6 @@ namespace Business.Validations.FluentValidation.LibraryValidator
         {
             RuleFor(x => x.UserId)
                 .NotEmpty().WithMessage("User ID is required.");
-
-            RuleFor(x => x.GameId)
-                .NotEmpty().WithMessage("Game ID is required.");
         }
     }
 }

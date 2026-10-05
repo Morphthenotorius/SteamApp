@@ -15,6 +15,8 @@ namespace Business.Concrete
         public ReviewManager(IReviewDAL reviewDAL) : base(reviewDAL,
             createDto => new Review
             {
+                GameId = createDto.GameId,
+                UserId = createDto.UserId,
                 Content = createDto.Content,
                 IsRecommended = createDto.IsRecommended,
             },
@@ -22,14 +24,17 @@ namespace Business.Concrete
             static entity => new GetReviewDTO
             {
                 Id = entity.Id,
+                UserId = entity.UserId,
+                Description = entity.Description,
                 Content = entity.Content,
                 IsRecommended = entity.IsRecommended,
             },
 
-            (existingEntity,updatedEntity) =>
+            (updateDto,existingEntity) =>
             {
-                existingEntity.Content = updatedEntity.Content;
-                existingEntity.IsRecommended = updatedEntity.IsRecommended;
+                existingEntity.Description = updateDto.Description;
+                existingEntity.Content = updateDto.Content;
+                existingEntity.IsRecommended = updateDto.IsRecommended;
             }
             ) 
         

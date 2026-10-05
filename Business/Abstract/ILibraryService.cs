@@ -10,6 +10,7 @@ namespace Business.Abstract
 {
     public interface ILibraryService : IServiceBase<GetLibraryDTO,CreateLibraryDTO,UpdateLibraryDTO,Library>
     {
+        Task<IResult> BuyGameAsync(AddGameToLibraryDTO dto);
         Task<IDataResult<GetLibraryDTO>> GetUserLibraryWithGamesAsync(Guid userId);
         Task<IResult> AddGameToLibraryAsync(Guid userId, Guid GameId);
         Task<IResult> ToggleFavouriteGameAsync(Guid userId,Guid GameId);

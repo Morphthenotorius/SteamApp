@@ -1,7 +1,9 @@
 ﻿using Business.Abstract;
+using Business.Abstract.Payment;
 using Business.DTOs;
 using Business.DTOs.LibraryDTO;
 using Core.Entities.Concrete;
+using Core.Entities.Enums.Payment;
 using Core.Entities.User;
 using Core.Utilites.Results;
 using Core.Utilites.Results.DataResults;
@@ -18,12 +20,13 @@ namespace Business.Concrete
 {
     public class LibraryManager : BaseManager<Library,GetLibraryDTO,CreateLibraryDTO,UpdateLibraryDTO>,ILibraryService
     {
+        private readonly IStripeService _stripeService;
         private readonly ILibraryDAL _libraryDal;
         private readonly AppDbContext _dbContext;
         private readonly IGameDAL _gamedal;
         private readonly UserManager<AppUser> _userManager;
 
-        public LibraryManager(ILibraryDAL libraryDAL,AppDbContext dbContext,IGameDAL gameDAL,UserManager<AppUser> userManager) : base(
+        public LibraryManager(ILibraryDAL libraryDAL,AppDbContext dbContext,IGameDAL gameDAL,UserManager<AppUser> userManager,IStripeService stripeService) : base(
         libraryDAL,
 
         // 1. CreateDTO -> Library Entity (Kitabxana ilk dəfə yaradılanda)
@@ -43,6 +46,7 @@ namespace Business.Concrete
         }
     )
         {
+            _stripeService = stripeService;
             _gamedal = gameDAL;
             _dbContext = dbContext;
             _libraryDal = libraryDAL;
@@ -77,13 +81,33 @@ namespace Business.Concrete
                     return new ErrorResult("User was not found");
                 }
 
-                if(user.Balance < game.Price)
+                decimal gamePrice = game.Price;
+                decimal amountToChargeCard = 0;
+
+                if (dto.PaymentMethod == PaymentMethod.Wallet)
                 {
-                    return new ErrorResult("Insufficent Balance");
+                    if (user.Balance < game.Price)
+                    {
+                        return new ErrorResult("Insufficent Balance");
+                    }
+
+                    user.Balance -= game.Price;
+                    await _userManager.UpdateAsync(user);
                 }
 
-                user.Balance -= game.Price;
-                await _userManager.UpdateAsync(user);
+                else if (dto.PaymentMethod == PaymentMethod.CreditCard)
+                {
+                    if (string.IsNullOrEmpty(dto.StripeToken))
+                    {
+                        return new ErrorResult("Stripe token is required for credit card payment!");    
+                    }
+
+                    var stripeResult = await _stripeService.ChargeAsync(dto.StripeToken, game.Price);
+                    if (!stripeResult.IsSuccess)
+                    {
+                        return new ErrorResult($"Card payment failed: {stripeResult.Message}");
+                    }
+                }
 
                 library.LibraryGames.Add(new LibraryGames
                 {
