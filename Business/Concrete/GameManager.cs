@@ -2,6 +2,7 @@
 using Business.DTOs.GameDTOs;
 using Business.Utilities.Helpers;
 using Core.Entities.Concrete;
+using Core.Utilites.Results.DataResults;
 using DataAccess.Abstract;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace Business.Concrete
 {
     public class GameManager : BaseManager<Game,GetGameDTO,CreateGameDTO,UpdateGameDTO>,IGameService
     {
+        private readonly IGameDAL gameDAL;
         public GameManager(IGameDAL _gameDAL) : base(_gameDAL,
             
             createDTO=> new Game
@@ -79,9 +81,49 @@ namespace Business.Concrete
                     }
                 }
             }
+
             )
         {
-            
+            gameDAL = _gameDAL;
+        }
+
+        public override async Task<IDataResult<List<GetGameDTO>>> GetAllAsync()
+        {
+            try
+            {
+                var games = await gameDAL.GetGamesWithDetailsAsync();
+                if (!games.Any() || games == null)
+                {
+                    return new ErrorDataResult<List<GetGameDTO>>("No games found :(");
+                }
+
+                var model = games.Select(_mapToGetDTO).ToList();
+                return new SuccessDataResult<List<GetGameDTO>>(model, "Games retrieved successfully!");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorDataResult<List<GetGameDTO>>($"There is an error occured during get process: {ex.Message}");
+            }
+        }
+
+        public override async Task<IDataResult<GetGameDTO>> GetByIdAsync(Guid id)
+        {
+            try
+            {
+                var game = await gameDAL.GetGameWithDetailsByIdAsync(id);
+                if (game == null)
+                {
+                    return new ErrorDataResult<GetGameDTO>("No game was found :(");
+                }
+
+                var model = _mapToGetDTO(game);
+                return new SuccessDataResult<GetGameDTO>(model, "Game retrieved successfully!");
+            }
+
+            catch (Exception ex)
+            {
+                return new ErrorDataResult<GetGameDTO>($"There is an error occured during get process: {ex.Message}");
+            }
         }
     }
 }

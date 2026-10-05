@@ -11,5 +11,6 @@ namespace Core.Entities.User
         public string LastName {  get; set; }
         public string? RefreshToken {  get; set; }
         public DateTime? RefreshTokenExpiration {  get; set; }
+        public decimal Balance {  get; set; }
     }
 }

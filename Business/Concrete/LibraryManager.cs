@@ -2,10 +2,14 @@
 using Business.DTOs;
 using Business.DTOs.LibraryDTO;
 using Core.Entities.Concrete;
+using Core.Entities.User;
 using Core.Utilites.Results;
 using Core.Utilites.Results.DataResults;
 using DataAccess.Abstract;
+using DataAccess.Context;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +19,11 @@ namespace Business.Concrete
     public class LibraryManager : BaseManager<Library,GetLibraryDTO,CreateLibraryDTO,UpdateLibraryDTO>,ILibraryService
     {
         private readonly ILibraryDAL _libraryDal;
-        public LibraryManager(ILibraryDAL libraryDAL) : base(
+        private readonly AppDbContext _dbContext;
+        private readonly IGameDAL _gamedal;
+        private readonly UserManager<AppUser> _userManager;
+
+        public LibraryManager(ILibraryDAL libraryDAL,AppDbContext dbContext,IGameDAL gameDAL,UserManager<AppUser> userManager) : base(
         libraryDAL,
 
         // 1. CreateDTO -> Library Entity (Kitabxana ilk dəfə yaradılanda)
@@ -35,10 +43,70 @@ namespace Business.Concrete
         }
     )
         {
+            _gamedal = gameDAL;
+            _dbContext = dbContext;
             _libraryDal = libraryDAL;
+            _userManager = userManager;
         }
 
+        public async Task<IResult> BuyGameAsync(AddGameToLibraryDTO dto)
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var library = await _libraryDal.GetAsync(l => l.Id == dto.LibraryId, include: l => l.Include(x => x.LibraryGames));
+                if(library == null)
+                {
+                    return new ErrorResult("Library was not found :(");
+                }
+                bool isAlreadyOwned = library.LibraryGames.Any(lg => lg.GameId == dto.GameId);
+                if (isAlreadyOwned)
+                {
+                    return new ErrorResult("You already own this game");
+                }
 
+                var game =await _gamedal.GetGameWithDetailsByIdAsync(dto.GameId);
+                if(game == null)
+                {
+                    return new ErrorResult("Game was not found");
+                }
+
+                var user = await _userManager.FindByIdAsync(library.UserId.ToString());
+                if (user == null)
+                {
+                    return new ErrorResult("User was not found");
+                }
+
+                if(user.Balance < game.Price)
+                {
+                    return new ErrorResult("Insufficent Balance");
+                }
+
+                user.Balance -= game.Price;
+                await _userManager.UpdateAsync(user);
+
+                library.LibraryGames.Add(new LibraryGames
+                {
+                    LibraryId = dto.LibraryId,
+                    GameId = dto.GameId,
+                    PurchasedDate = DateTime.UtcNow,
+                    PlayedTime = TimeSpan.Zero,
+                    IsFavorite = false,
+
+                });
+                await _libraryDal.UpdateAsync(library);
+
+                await transaction.CommitAsync();
+
+                return new SuccessResult($"Purchase accomplished {game.Title} was successfully added to your library");
+            }
+
+            catch(Exception ex) 
+            {
+                await transaction.RollbackAsync();
+                return new ErrorResult($"Unknown error occured during purchase process {ex.Message}");
+            }
+        }
 
         public async Task<IResult> AddGameToLibraryAsync(Guid userId, Guid GameId)
         {
@@ -82,72 +150,98 @@ namespace Business.Concrete
 
         public async Task<IDataResult<GetLibraryDTO>> GetUserLibraryWithGamesAsync(Guid userId)
         {
-            var library = await _libraryDal.GetLibraryWithGames(userId);
-            if(library == null)
+            try
             {
-                return new ErrorDataResult<GetLibraryDTO>(null,"Library was not found :(");
-            }
-
-            var dto = new GetLibraryDTO
-            {
-                Id = library.Id,
-                UserId = library.UserId,
-                Games = library.LibraryGames.Select(x => new GetLibraryGamesDTO
+                var library = await _libraryDal.GetLibraryWithGames(userId);
+                if (library == null)
                 {
-                    GameId = x.GameId,
-                    GameTitle = x.Game.Title,
-                    GameCoverImgUrl = x.Game.CoverImageUrl,
-                    PurchasedDate = x.PurchasedDate,
-                    PlayedTime = x.PlayedTime,
-                    IsFavorite = x.IsFavorite
+                    return new ErrorDataResult<GetLibraryDTO>(null, "Library was not found :(");
+                }
 
-                }).ToList()
-            };
-            return new SuccessDataResult<GetLibraryDTO>("Library loaded successfully");
+                var dto = MapToGetLibraryDTO(library);
+                return new SuccessDataResult<GetLibraryDTO>(dto,"Library loaded successfully");
+            }
+            
+            catch (Exception ex)
+            {
+                return new ErrorDataResult<GetLibraryDTO>($"There is an error occured during get process: {ex.Message}");
+            }
         }
 
         public async Task<IResult> RefundGame(Guid userId, Guid GameId)
         {
-            var library =await _libraryDal.GetLibraryWithGames(userId);
-            if( library == null)
+            try
             {
-                return new ErrorResult("Library was not found :(");
+                var library = await _libraryDal.GetLibraryWithGames(userId);
+                if (library == null)
+                {
+                    return new ErrorResult("Library was not found :(");
+                }
+
+                var game = library.LibraryGames.FirstOrDefault(x => x.GameId == GameId);
+                if (game == null)
+                {
+                    return new ErrorResult("Game was not found in your library");
+                }
+
+                await _libraryDal.RemoveGameFromLibrary(game);
+                await _libraryDal.UpdateAsync(library);
+                return new SuccessResult("Game successfully refunded");
             }
 
-            var game =library.LibraryGames.FirstOrDefault(x=> x.GameId==GameId);
-            if(game == null)
+            catch (Exception ex)
             {
-                return new ErrorResult("Game was not found in your library");
+                return new ErrorResult($"There is an error occured during get process: {ex.Message}");
             }
-
-            await _libraryDal.RemoveGameFromLibrary(game);
-            await _libraryDal.UpdateAsync(library);
-            return new SuccessResult("Game successfully refunded");
         }
 
         public async Task<IResult> ToggleFavouriteGameAsync(Guid userId, Guid GameId)
         {
-            var library = await _libraryDal.GetLibraryWithGames(userId);
-            if (library == null)
+            try
             {
-                return new ErrorResult("Library was not found :(");
+                var library = await _libraryDal.GetLibraryWithGames(userId);
+                if (library == null)
+                {
+                    return new ErrorResult("Library was not found :(");
+                }
+
+                var game = library.LibraryGames.FirstOrDefault(x => x.GameId == GameId);
+                if (game == null)
+                {
+                    return new ErrorResult("Game was not found in your library");
+                }
+
+                game.IsFavorite = !game.IsFavorite;
+                await _libraryDal.UpdateAsync(library);
+
+                return new SuccessResult("Favourite status successfully updated");
             }
 
-            var game = library.LibraryGames.FirstOrDefault(x => x.GameId == GameId);
-            if (game == null)
+            catch (Exception ex)
             {
-                return new ErrorResult("Game was not found in your library");
+                return new ErrorResult($"There is an error occured during get process: {ex.Message}");
             }
-
-            game.IsFavorite = !game.IsFavorite;
-            await _libraryDal.UpdateAsync(library);
-
-            return new SuccessResult("Favourite status successfully updated");
         }
 
         public override async Task<IDataResult<List<GetLibraryDTO>>> GetAllAsync()
         {
+            try
+            {
 
+                var libraries = await _libraryDal.GetLibrariesWithGames(); 
+                if (libraries == null || !libraries.Any())
+                {
+                    return new ErrorDataResult <List<GetLibraryDTO>>("Library was not found :(");
+                }
+
+                var model =libraries.Select(MapToGetLibraryDTO).ToList();
+                return new SuccessDataResult<List<GetLibraryDTO>>(model, "Libraries retrieved");
+            }
+
+            catch (Exception ex)
+            {
+                return new ErrorDataResult<List<GetLibraryDTO>>($"There is an error occured during get process: {ex.Message}");
+            }
         }
     }
 }

@@ -10,5 +10,6 @@ namespace DataAccess.Abstract
     {
         Task RemoveGameFromLibrary(LibraryGames game);
         Task<Library> GetLibraryWithGames(Guid id);
+        Task<List<Library>> GetLibrariesWithGames();
     }
 }

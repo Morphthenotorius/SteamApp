@@ -18,7 +18,7 @@ namespace Business.Concrete
 
         private readonly IRepositoryBase<TEntity> _repository;
         private readonly Func<TCreateDTO, TEntity> _mapToCreateDTO;
-        private readonly Func<TEntity, TGetDTO> _mapToGetDTO;
+        protected readonly Func<TEntity, TGetDTO> _mapToGetDTO;
         private readonly Action<TUpdateDTO, TEntity> _mapToUpdateDTO;
 
         public BaseManager(IRepositoryBase<TEntity> repository, 
@@ -88,7 +88,7 @@ namespace Business.Concrete
             }
         }
 
-        public async Task<IDataResult<TGetDTO>> GetByIdAsync(Guid Id)
+        public virtual async Task<IDataResult<TGetDTO>> GetByIdAsync(Guid Id)
         {
             try
             {

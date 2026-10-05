@@ -8,5 +8,7 @@ namespace DataAccess.Abstract
 {
     public interface IGameDAL : IRepositoryBase<Game>
     {
+        Task<List<Game>> GetGamesWithDetailsAsync();
+        Task<Game> GetGameWithDetailsByIdAsync(Guid id);
     }
 }

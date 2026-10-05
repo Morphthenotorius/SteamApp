@@ -28,6 +28,8 @@ namespace Business.Utilities.Helpers.ServiceRegistration
             services.AddScoped<ILibraryService, LibraryManager>();
             services.AddScoped<IReviewDAL,EfReviewDAL>();
             services.AddScoped<IReviewService,ReviewManager>();
+            services.AddScoped<ICompanyDAL,EfCompanyDAL>();
+            services.AddScoped<ICompanyService, CompanyManager>();
             services.AddScoped<IAuthService, AuthManager>();
             services.AddScoped<ITokenHelper, JwtHelper>();
             services.AddDataProtection();

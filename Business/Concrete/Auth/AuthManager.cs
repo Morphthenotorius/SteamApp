@@ -1,9 +1,11 @@
 ﻿using Business.Abstract.Auth;
 using Business.DTOs.AuthDTO;
 using Business.DTOs.AuthDTO.TokenDTO;
+using Core.Entities.Concrete;
 using Core.Entities.User;
 using Core.Utilites.Results;
 using Core.Utilites.Security.Abstract;
+using DataAccess.Abstract;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,11 +15,13 @@ namespace Business.Concrete.Auth
     public class AuthManager : IAuthService
     {
         private readonly UserManager<AppUser> _userManager;
-
-        public AuthManager(UserManager<AppUser> userManager,ITokenHelper tokenHelper)
+        private readonly ILibraryDAL _libraryDAL;
+        public AuthManager(UserManager<AppUser> userManager, ITokenHelper tokenHelper, ILibraryDAL libraryDAL)
         {
+            _libraryDAL = libraryDAL;
             _userManager = userManager;
             _tokenHelper = tokenHelper;
+
         }
 
         private readonly ITokenHelper _tokenHelper;
@@ -70,20 +74,23 @@ namespace Business.Concrete.Auth
                 LastName = model.LastName,
                 Email = model.Email,
                 UserName = model.Username,
+                Balance = 0
             };
 
             var result = await _userManager.CreateAsync(appUser, model.Password);
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                return new SuccessResult("Account has successfully created!"); 
-
+                return new ErrorResult("Oops something went wrong"); 
             }
 
-            else
+            var UserLibrary = new Library
             {
-                return new ErrorResult("Oops something went wrong");
-            }
+                Id = Guid.NewGuid(),
+                UserId = appUser.Id
+            };
 
+            await _libraryDAL.AddAsync(UserLibrary);
+            return new SuccessResult("Account has successfully created");
         }
     }
 }
