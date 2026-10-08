@@ -72,7 +72,7 @@ namespace DataAccess.Context
         public DbSet<Company> Companies { get; set; }
         public DbSet<Library> Libraries { get; set; }
         public DbSet<Review> Reviews { get; set; }
-        public DbSet<User> Users { get; set; }
         public DbSet<LibraryGames> LibraryGames { get; set; }
+        public DbSet<Wishlist> Wishlist { get; set; }
     }
 }

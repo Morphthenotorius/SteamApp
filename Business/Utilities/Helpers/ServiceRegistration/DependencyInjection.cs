@@ -32,6 +32,8 @@ namespace Business.Utilities.Helpers.ServiceRegistration
             services.AddScoped<IReviewService,ReviewManager>();
             services.AddScoped<ICompanyDAL,EfCompanyDAL>();
             services.AddScoped<ICompanyService, CompanyManager>();
+            services.AddScoped<IWishlistDAL, EfWishlistDAL>();
+            services.AddScoped<IWishlistService, WishlistManager>();
             services.AddScoped<IAuthService, AuthManager>();
             services.AddScoped<ITokenHelper, JwtHelper>();
             services.AddScoped<IStripeService, StripeManager>();
@@ -48,8 +50,7 @@ namespace Business.Utilities.Helpers.ServiceRegistration
             .AddEntityFrameworkStores<AppDbContext>()
             .AddSignInManager<SignInManager<AppUser>>()
             .AddDefaultTokenProviders();
-            
-                return services;
+            return services;
         }
     }
 }

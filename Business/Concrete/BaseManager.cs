@@ -31,7 +31,7 @@ namespace Business.Concrete
         }
 
 
-        public async Task<IResult> AddAsync(TCreateDTO model)
+        public virtual async Task<IResult> AddAsync(TCreateDTO model)
         {
             try
             {

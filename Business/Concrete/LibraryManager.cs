@@ -140,7 +140,8 @@ namespace Business.Concrete
                 return new ErrorResult("Error! Library was not found!");
             }
 
-            if(!library.LibraryGames.Any(x=> x.GameId == GameId)){
+            if(!library.LibraryGames.Any(x=> x.GameId == GameId))
+            {
                 library.LibraryGames.Add(new LibraryGames
                 {
                     LibraryId = library.Id,

@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Core.Entities.Abstract;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Core.Entities.User
 {
-    public class AppUser : IdentityUser<Guid>
+    public class AppUser : IdentityUser<Guid>,IEntity
     {
         public string FirstName {  get; set; }
         public string LastName {  get; set; }

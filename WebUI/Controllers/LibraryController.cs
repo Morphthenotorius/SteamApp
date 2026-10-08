@@ -3,6 +3,7 @@ using Business.DTOs.LibraryDTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebUI.Controllers
 {
@@ -74,8 +75,14 @@ namespace WebUI.Controllers
         }
 
         [HttpGet ("GetUserLibraryWGames")]
-        public async Task<IActionResult> GetUserLibraryWithGames(Guid userId)
+        public async Task<IActionResult> GetUserLibraryWithGames()
         {
+            var userClaims = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userClaims))
+            {
+                return Unauthorized("User is not valid");
+            }
+            var userId = Guid.Parse(userClaims);
             var result = await _libraryService.GetUserLibraryWithGamesAsync(userId);
             if (result.IsSuccess)
             {
