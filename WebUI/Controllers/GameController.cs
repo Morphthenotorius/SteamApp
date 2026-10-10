@@ -1,4 +1,5 @@
 ﻿using Business.Abstract;
+using Business.DTOs.FilterDTO;
 using Business.DTOs.GameDTOs;
 using Core.Utilites.Results.DataResults;
 using Microsoft.AspNetCore.Http;
@@ -93,6 +94,20 @@ namespace WebUI.Controllers
             }
         }
 
+        [HttpGet("Filter")]
+        public async Task<IActionResult> GetFilteredGame([FromQuery]GameFilterDTO dto)
+        {
+            var result = await _gameService.GetFilteredAsync(dto);
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            else
+            {
+                return BadRequest(result);
+            }
+        }
         
     }
 }

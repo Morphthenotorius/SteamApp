@@ -17,6 +17,7 @@ namespace Business.DTOs.GameDTOs
         public string DevCompany { get; set; }
         public List<string> Categories { get; set; }
         
+        public int SalesCount {  get; set; }
         public int TotalReviewsCount {  get; set; }
         public double PositivePercentage {  get; set; }
         public string ReviewSummary {  get; set; }

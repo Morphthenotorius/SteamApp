@@ -13,7 +13,7 @@ namespace Core.Repository
         Task UpdateAsync(TEntity entity);
         Task RemoveAsync(TEntity entity);
 
-        Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> expression,Func<IQueryable<TEntity> , IQueryable<TEntity>>? include = null);
+        Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> expression,Func<IQueryable<TEntity> , IQueryable<TEntity>>? include = null);
         Task<List<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> expression = null, bool tracking = false);
         Task<TEntity> GetByIdAsync(Guid id);
     }

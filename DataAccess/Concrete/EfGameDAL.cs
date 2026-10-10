@@ -19,6 +19,7 @@ namespace DataAccess.Concrete
         public async Task<List<Game>> GetGamesWithDetailsAsync()
         {
             return await _context.Games
+                .Include(g=>g.LibraryGames)
                 .Include(g => g.Publisher)
                 .Include(g => g.DevCompany)
                 .Include(g => g.GameCategories)
@@ -31,6 +32,7 @@ namespace DataAccess.Concrete
         public async Task<Game> GetGameWithDetailsByIdAsync(Guid id)
         {
             return await _context.Games
+                .Include(g=>g.LibraryGames)
                 .Include(g => g.Publisher)
                 .Include(g => g.DevCompany)
                 .Include(g => g.GameCategories)

@@ -1,5 +1,6 @@
 ﻿using Business.Abstract;
 using Core.Entities.Abstract;
+using Core.Entities.Concrete;
 using Core.Repository;
 using Core.Utilites.Results;
 using Core.Utilites.Results.DataResults;
@@ -133,23 +134,58 @@ namespace Business.Concrete
             }
         }
 
-       public async Task<IDataResult<TGetDTO>> GetAsync(Expression<Func<TEntity, bool>> expression, Func<IQueryable<TEntity>, IQueryable<TEntity>>? include)
+        public async Task<IDataResult<List<TGetDTO>>> GetAsync(
+            Expression<Func<TEntity, bool>>? expression = null,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null)
         {
             try
             {
-                var entity = await _repository.GetAsync(expression, include);
-                if(entity == null)
+                var entities = await _repository.GetAsync(expression, include);
+
+                if (entities == null || !entities.Any())
                 {
-                    return new ErrorDataResult<TGetDTO>("Upcoming data cannot be null");
+                    return new SuccessDataResult<List<TGetDTO>>(new List<TGetDTO>(), "Məlumat tapılmadı.");
                 }
-                var dto = _mapToGetDTO(entity);
-                return new SuccessDataResult<TGetDTO>(dto,"Data has been provided successfully");
+                var dtoList = entities.Select(e => _mapToGetDTO(e)).ToList();
+
+                return new SuccessDataResult<List<TGetDTO>>(dtoList, "Uğurla gətirildi.");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorDataResult<List<TGetDTO>>($"Xəta baş verdi: {ex.Message}");
+            }
+        }
+
+        public async Task<IDataResult<PagedResult<TGetDTO>>> GetPagedAsync(Expression<Func<TEntity, bool>>? filter, Func<IQueryable<TEntity>, IQueryable<TEntity>>? include, Func<List<TGetDTO>, IEnumerable<TGetDTO>>? sort, int pageIndex, int pageSize)
+        {
+            var result = await GetAsync(filter, include);
+            if (!result.IsSuccess)
+            {
+                return new ErrorDataResult<PagedResult<TGetDTO>>(result.Message);
+            }
+            IEnumerable<TGetDTO> items = result.Data;
+            if (sort != null)
+            {
+                items = sort(result.Data);
+            }
+            if(pageIndex < 1)
+            {
+                pageIndex = 1;
             }
 
-            catch (Exception ex) 
+            if(pageSize < 1)
             {
-                return new ErrorDataResult<TGetDTO>($"An Error Occured! {ex.Message}");
+                pageSize = 10;
             }
+            var paged = new PagedResult<TGetDTO>
+            {
+                Items = items.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(),
+                TotalCount = result.Data.Count,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+
+            return new SuccessDataResult<PagedResult<TGetDTO>>(paged,"Successfully Retrieved");
         }
     }
 }

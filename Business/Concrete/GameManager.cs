@@ -1,11 +1,14 @@
 ﻿using Business.Abstract;
+using Business.DTOs.FilterDTO;
 using Business.DTOs.GameDTOs;
 using Business.Utilities.Helpers;
 using Core.Entities.Concrete;
 using Core.Utilites.Results.DataResults;
 using DataAccess.Abstract;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace Business.Concrete
@@ -52,6 +55,7 @@ namespace Business.Concrete
 
                     Categories = entity.GameCategories.Select(x => x.Category.Name).ToList(),
 
+                    SalesCount = entity.LibraryGames?.Count ?? 0,
                     TotalReviewsCount = totalCount,
                     PositivePercentage = percentage,
                     ReviewSummary = CalculateRating.CalculateGameRating(totalCount, percentage),
@@ -124,6 +128,37 @@ namespace Business.Concrete
             {
                 return new ErrorDataResult<GetGameDTO>($"There is an error occured during get process: {ex.Message}");
             }
+        }
+
+        public async Task<IDataResult<PagedResult<GetGameDTO>>> GetFilteredAsync(GameFilterDTO dto)
+        {
+            Expression<Func<Game, bool>> filter = g => (string.IsNullOrEmpty(dto.SearchTerm) || g.Title.Contains(dto.SearchTerm)) &&
+                (!dto.CategoryId.HasValue || g.GameCategories.Any(gc => gc.CategoryId == dto.CategoryId)) &&
+                (!dto.MinPrice.HasValue || g.Price >= dto.MinPrice) &&
+                (!dto.MaxPrice.HasValue || g.Price <= dto.MaxPrice);
+
+            Func<List<GetGameDTO>, IEnumerable<GetGameDTO>> sort = list =>
+            {
+                switch (dto.Sortby.ToLower())
+                {
+                    case "price_asc": return list.OrderBy(g => g.Price);
+                    case "price_desc": return list.OrderByDescending(g => g.Price);
+                    case "top_sellers": return list.OrderByDescending(g => g.SalesCount);
+                    case "most_liked": return list.OrderByDescending(g => g.PositivePercentage);
+                    default: return list;
+                }
+            };
+
+            return await GetPagedAsync(filter, q => q
+            .Include(g => g.Publisher)
+            .Include(g => g.CoverImageUrl)
+            .Include(g => g.DevCompany)
+            .Include(g => g.GameCategories)
+            .ThenInclude(gc => gc.Category)
+            .Include(g => g.Reviews)
+            .Include(g => g.LibraryGames),
+            sort, dto.PageIndex, dto.PageSize);
+        
         }
     }
 }

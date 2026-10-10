@@ -40,17 +40,22 @@ namespace Core.Repository.EntityFramework
             return await result.ToListAsync();
         }
 
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> expression, Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null)
-        {
-            IQueryable<TEntity> result = _context.Set<TEntity>();
-
-            if(include != null)
+            public async Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> expression, Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null)
             {
-                result = include(result);
-            }
+                IQueryable<TEntity> result = _context.Set<TEntity>();
 
-            return await result.FirstOrDefaultAsync(expression);
-        }
+                if(include != null)
+                {
+                    result = include(result);
+                }
+
+                if(expression!= null)
+                {
+                    result = result.Where(expression);
+                }
+
+                return await result.ToListAsync();
+            }
 
         public async Task<TEntity> GetByIdAsync(Guid id)
         {
