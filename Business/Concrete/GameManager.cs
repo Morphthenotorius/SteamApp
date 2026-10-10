@@ -139,7 +139,7 @@ namespace Business.Concrete
 
             Func<List<GetGameDTO>, IEnumerable<GetGameDTO>> sort = list =>
             {
-                switch (dto.Sortby.ToLower())
+                switch (dto.Sortby?.ToLower())
                 {
                     case "price_asc": return list.OrderBy(g => g.Price);
                     case "price_desc": return list.OrderByDescending(g => g.Price);
@@ -151,7 +151,6 @@ namespace Business.Concrete
 
             return await GetPagedAsync(filter, q => q
             .Include(g => g.Publisher)
-            .Include(g => g.CoverImageUrl)
             .Include(g => g.DevCompany)
             .Include(g => g.GameCategories)
             .ThenInclude(gc => gc.Category)

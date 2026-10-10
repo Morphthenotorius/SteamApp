@@ -1,9 +1,11 @@
 ﻿using Business.Abstract.Auth;
 using Business.DTOs.AuthDTO;
 using Business.DTOs.AuthDTO.TokenDTO;
+using Business.DTOs.Payment;
 using Core.Entities.Concrete;
 using Core.Entities.User;
 using Core.Utilites.Results;
+using Core.Utilites.Results.DataResults;
 using Core.Utilites.Security.Abstract;
 using DataAccess.Abstract;
 using DataAccess.Context;
@@ -96,6 +98,31 @@ namespace Business.Concrete.Auth
 
             await _libraryDAL.AddAsync(UserLibrary);
             return new SuccessResult("Account has successfully created");
+        }
+
+        public async Task<IDataResult<UserInfoDTO>> GetUserAsync(Guid userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+                if (user == null)
+                {
+                    return new ErrorDataResult<UserInfoDTO>("User was not found");
+                }
+                return new SuccessDataResult<UserInfoDTO>(new UserInfoDTO
+                {
+                    UserName = user.UserName,
+                    Id = userId,
+                    Balance = user.Balance,
+                    Email = user.Email,
+
+                },"User info successfully retrieved");
+                
+            }
+            catch(Exception ex)
+            {
+                return new ErrorDataResult<UserInfoDTO>("Sorry an unkown error occured");
+            }
         }
     }
 }

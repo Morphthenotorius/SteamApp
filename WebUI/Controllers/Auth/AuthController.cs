@@ -2,6 +2,7 @@
 using Business.DTOs.AuthDTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebUI.Controllers.Auth
 {
@@ -44,6 +45,22 @@ namespace WebUI.Controllers.Auth
             {
                 return Unauthorized("Email/Username or Password is incorrect");
             }
+        }
+
+        [HttpGet("UserInfo")]
+        public async Task<IActionResult> UserInfo()
+        {
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if(string.IsNullOrEmpty(id))
+            {
+                return Unauthorized();
+            }
+            var result = await _authService.GetUserAsync(Guid.Parse(id));
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            return NotFound(result);
         }
 
     }

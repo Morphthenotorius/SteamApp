@@ -1,6 +1,8 @@
 ﻿using Business.DTOs.AuthDTO;
 using Business.DTOs.AuthDTO.TokenDTO;
+using Business.DTOs.Payment;
 using Core.Utilites.Results;
+using Core.Utilites.Results.DataResults;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -12,5 +14,6 @@ namespace Business.Abstract.Auth
     {
         Task<IResult> RegisterAsync(RegisterDTO model);
         Task<TokenDTO> LoginAsync(LoginDTO model);
+        Task<IDataResult<UserInfoDTO>> GetUserAsync(Guid userId); 
     }
 }

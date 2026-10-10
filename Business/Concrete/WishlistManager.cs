@@ -48,7 +48,7 @@ namespace Business.Concrete
         {
             try
             {
-                var exists = await _wishlistDal.GetAsync(w => w.UserId == dto.UserId);
+                var exists = await _wishlistDal.GetAsync(w => w.UserId == dto.UserId && w.GameId == dto.GameId);
                 if (exists != null)
                 {
                     return new ErrorResult("This game already in your wishlist");
@@ -93,12 +93,13 @@ namespace Business.Concrete
             try
             {
                 var game = await _wishlistDal.GetAsync(x => x.GameId == gameId && x.UserId == userId);
-                if (game == null)
+                var wishlistGame =game.FirstOrDefault();
+                if (wishlistGame == null)
                 {
                     return new ErrorResult("Game was not found in this user's wishlist");
                 }
 
-                await _wishlistDal.RemoveAsync(game);
+                await _wishlistDal.RemoveAsync(wishlistGame);
                 return new SuccessResult("The game successfully deleted from your wishlist");
             }
 
