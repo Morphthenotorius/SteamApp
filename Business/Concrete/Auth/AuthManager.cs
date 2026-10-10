@@ -87,9 +87,6 @@ namespace Business.Concrete.Auth
                 return new ErrorResult(errorMessage);
             }
 
-            using AppDbContext context = new AppDbContext();
-            context.SaveChangesAsync();
-
             var UserLibrary = new Library
             {
                 Id = Guid.NewGuid(),

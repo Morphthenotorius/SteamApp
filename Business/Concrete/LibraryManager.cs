@@ -58,8 +58,9 @@ namespace Business.Concrete
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var library = await _libraryDal.GetAsync(l => l.Id == dto.LibraryId, include: l => l.Include(x => x.LibraryGames));
-                if(library == null)
+                var library = (await _libraryDal.GetAsync(l => l.Id == dto.LibraryId,
+                 include: l => l.Include(x => x.LibraryGames))).FirstOrDefault();
+                if (library == null)
                 {
                     return new ErrorResult("Library was not found :(");
                 }
@@ -195,28 +196,41 @@ namespace Business.Concrete
 
         public async Task<IResult> RefundGame(Guid userId, Guid GameId)
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
                 var library = await _libraryDal.GetLibraryWithGames(userId);
                 if (library == null)
-                {
                     return new ErrorResult("Library was not found :(");
-                }
 
-                var game = library.LibraryGames.FirstOrDefault(x => x.GameId == GameId);
-                if (game == null)
-                {
+                var owned = library.LibraryGames.FirstOrDefault(x => x.GameId == GameId);
+                if (owned == null)
                     return new ErrorResult("Game was not found in your library");
-                }
 
-                await _libraryDal.RemoveGameFromLibrary(game);
+                if (DateTime.UtcNow - owned.PurchasedDate > TimeSpan.FromDays(14))
+                    return new ErrorResult("Refund period (14 days) has expired");
+
+                if (owned.PlayedTime > TimeSpan.FromHours(2))
+                    return new ErrorResult("You have played more than 2 hours, refund is not available");
+
+                var game = await _gamedal.GetGameWithDetailsByIdAsync(GameId);
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+                if (game == null || user == null)
+                    return new ErrorResult("Game or user was not found");
+
+                await _libraryDal.RemoveGameFromLibrary(owned);
                 await _libraryDal.UpdateAsync(library);
-                return new SuccessResult("Game successfully refunded");
-            }
 
+                user.Balance += game.Price;
+                await _userManager.UpdateAsync(user);
+
+                await transaction.CommitAsync();
+                return new SuccessResult($"{game.Title} was refunded, {game.Price} returned to your balance");
+            }
             catch (Exception ex)
             {
-                return new ErrorResult($"There is an error occured during get process: {ex.Message}");
+                await transaction.RollbackAsync();
+                return new ErrorResult($"There is an error occured during refund process: {ex.Message}");
             }
         }
 

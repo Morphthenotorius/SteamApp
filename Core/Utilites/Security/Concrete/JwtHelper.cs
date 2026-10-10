@@ -38,7 +38,7 @@ namespace Core.Utilites.Security.Concrete
 
             var SignInKey = new SymmetricSecurityKey(UTF8Encoding.UTF8.GetBytes(secretkey));
 
-            var AccessTokenExpiration = DateTime.UtcNow.AddMinutes(5);
+            var AccessTokenExpiration = DateTime.UtcNow.AddMinutes(60);
 
             JwtSecurityToken token = new JwtSecurityToken
             (

@@ -1,5 +1,6 @@
 ﻿using Business.Abstract.Auth;
 using Business.DTOs.AuthDTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -47,6 +48,7 @@ namespace WebUI.Controllers.Auth
             }
         }
 
+        [Authorize]
         [HttpGet("UserInfo")]
         public async Task<IActionResult> UserInfo()
         {

@@ -63,9 +63,15 @@ namespace WebUI.Controllers
         }
 
         [HttpPost("RefundGame")]
-        public async Task<IActionResult> RefundGame(Guid userId,Guid gameId)
+        public async Task<IActionResult> RefundGame(Guid gameId)
         {
-            var result = await _libraryService.RefundGame(userId, gameId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _libraryService.RefundGame(Guid.Parse(userId), gameId);
             if (result.IsSuccess)
             {
                 return Ok(result);
